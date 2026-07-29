@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# ai-dotfiles 설치 — 스킬을 에이전트가 읽는 위치로 심볼릭 링크한다.
+# my-agents 설치 — 에이전트 설정을 각 에이전트가 읽는 위치로 심볼릭 링크한다.
+# 저장소 안의 폴더명은 대상 위치와 같다 (.claude/ → ~/.claude/).
 # 여러 번 실행해도 안전하다. 기존의 "실제 폴더"는 절대 건드리지 않는다.
 set -euo pipefail
 
@@ -10,7 +11,7 @@ mkdir -p "$DEST"
 
 linked=0 skipped=0 already=0
 
-for src in "$ROOT"/claude/skills/*/; do
+for src in "$ROOT"/.claude/skills/*/; do
   [ -d "$src" ] || continue
   name="$(basename "$src")"
   target="$DEST/$name"

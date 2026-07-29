@@ -1,36 +1,39 @@
-# ai-dotfiles
+# my-agents
 
 내 AI 에이전트 설정 모음입니다. 스킬·지침·설정을 한 저장소에서 관리하고, 각 에이전트가 읽는 위치로 **심볼릭 링크**를
 겁니다. 원본이 여기 있으니 어느 기계에서든 클론하고 `./install.sh` 한 번이면 됩니다.
 
 ## 구조
 
+저장소 안의 폴더명은 **대상 위치와 같습니다.** `.claude/`의 내용이 `~/.claude/`로 갑니다.
+
 ```
-ai-dotfiles/
-├── claude/
-│   └── skills/          ← Claude Code 스킬 (→ ~/.claude/skills/)
+my-agents/
+├── .claude/
+│   └── skills/          → ~/.claude/skills/
 │       └── delivery-loop/
 ├── install.sh           ← 심볼릭 링크 설치 (idempotent)
 └── README.md
 ```
 
-에이전트가 늘어나면 `codex/` · `cursor/` 처럼 최상위에 폴더를 추가하고 `install.sh`에 링크 규칙을 더합니다.
+에이전트가 늘어나면 `.codex/` · `.cursor/` 처럼 최상위에 그 에이전트의 폴더를 추가하고 `install.sh`에 링크 규칙을
+더합니다.
 
 ## 설치
 
 ```bash
-git clone <이 저장소> ~/ai-dotfiles
-cd ~/ai-dotfiles && ./install.sh
+git clone git@github.com-personal:likeratel/my-agents.git ~/development/my-agents
+cd ~/development/my-agents && ./install.sh
 ```
 
-`install.sh`는 `claude/skills/*`를 `~/.claude/skills/`로 링크합니다. **기존에 같은 이름의 실제 폴더가 있으면 건드리지
-않고 건너뜁니다** — 다른 스킬 모음(gstack 등)을 덮어쓰지 않기 위함입니다.
+`install.sh`는 `.claude/skills/*`를 `~/.claude/skills/`로 링크합니다. **기존에 같은 이름의 실제 폴더가 있으면 건드리지
+않고 건너뜁니다** — 다른 스킬 모음을 덮어쓰지 않기 위함입니다.
 
 ## 스킬
 
-| 스킬            | 무엇                                                                                         |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `delivery-loop` | 설계 확정 → (계획 → 구현 → 리뷰·퀴즈) 반복. 단계가 많고 순서를 틀리면 되돌리기 어려운 작업용 |
+| 스킬            | 무엇                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `delivery-loop` | 설계 → 리뷰 → 확정 → (계획 → 계획 리뷰 → 구현 → 구현 리뷰 → 퀴즈) 반복. 단계가 많고 순서를 틀리면 되돌리기 어려운 작업용 |
 
 ## 공개 저장소입니다
 
