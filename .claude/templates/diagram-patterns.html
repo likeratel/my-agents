@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다이어그램 패턴 — 복사해서 쓰는 SVG·CSS 모음</title>
+<style>
+/* document.html과 같은 변수·다이어그램 스타일.
+   이 파일도 단독으로 열려야 하므로 필요한 만큼만 복제해 둔다. */
+:root {
+  --bg: #ffffff; --surface: #f7f8fa; --fg: #1c1e21; --muted: #5c6370;
+  --line: #d8dbe0; --accent: #0b5fbd; --accent-bg: #eaf2fd; --measure: 52rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171b; --surface: #1d2025; --fg: #e3e5e8; --muted: #9aa1ad;
+    --line: #333840; --accent: #6cb0ff; --accent-bg: #16283d;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 3rem 1.25rem 6rem; background: var(--bg); color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR",
+               "Apple SD Gothic Neo", sans-serif;
+  line-height: 1.7; word-break: keep-all;
+}
+main, header { max-width: var(--measure); margin: 0 auto; }
+h1 { font-size: 1.8rem; margin: 0 0 .5rem; }
+h2 { font-size: 1.25rem; margin: 3.5rem 0 .4rem; padding-bottom: .4rem;
+     border-bottom: 1px solid var(--line); }
+.subtitle, .when { color: var(--muted); }
+.when { font-size: .9rem; margin: 0 0 1.25rem; }
+code { background: var(--surface); border: 1px solid var(--line);
+       border-radius: 4px; padding: .1em .35em; font-size: .88em;
+       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+figure { margin: 0 0 1rem; }
+figcaption { color: var(--muted); font-size: .85rem; margin-top: .6rem; text-align: center; }
+
+/* 좁은 화면에서 축소하지 않고 가로 스크롤 — 줄이면 글자가 읽히지 않는다 */
+.diagram-scroll { overflow-x: auto; }
+svg.diagram { display: block; width: 100%; min-width: 40rem; height: auto;
+              color: var(--fg); font-family: inherit; }
+svg.diagram text      { fill: currentColor; font-size: 13px; }
+svg.diagram .label    { font-size: 11.5px; fill: var(--muted); }
+svg.diagram .box      { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }
+svg.diagram .box-em   { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 1.5; }
+svg.diagram .edge     { stroke: currentColor; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+svg.diagram .edge-dim { stroke: var(--muted); stroke-width: 1.25; fill: none;
+                        stroke-dasharray: 4 3; marker-end: url(#arrowhead-dim); }
+svg.diagram .lifeline { stroke: var(--line); stroke-width: 1.25; stroke-dasharray: 3 4; }
+
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; margin: 0 0 1rem; }
+.flow .node { flex: 1 1 8rem; background: var(--surface); border: 1.5px solid var(--line);
+              border-radius: 8px; padding: .7rem .9rem; font-size: .9rem; }
+.flow .node.em { background: var(--accent-bg); border-color: var(--accent); }
+.flow .node .n-title { font-weight: 620; display: block; }
+.flow .node .n-sub { color: var(--muted); font-size: .82rem; }
+.flow .arrow { align-self: center; color: var(--muted); flex: 0 0 auto; }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: 0 0 1rem; }
+.compare > div { border: 1.5px solid var(--line); border-radius: 8px; padding: .9rem 1.1rem;
+                 background: var(--surface); }
+.compare h3 { margin: 0 0 .5rem; font-size: .95rem; }
+.compare ul { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+
+@media (max-width: 34rem) {
+  .flow { flex-direction: column; }
+  .flow .arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 1.5rem; }
+  .compare { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+    </marker>
+    <marker id="arrowhead-dim" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity=".6"></path>
+    </marker>
+  </defs>
+</svg>
+
+<header>
+  <h1>다이어그램 패턴</h1>
+  <p class="subtitle">복사해서 좌표와 글자만 바꿔 쓰는 모음. 전부 인라인 SVG·CSS이고 외부 의존이 없습니다.</p>
+</header>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>1. 가로 흐름</h2>
+<p class="when">단계가 순서대로 이어질 때. 단계마다 부연이 필요하면 두 줄로 씁니다.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 110" role="img">
+  <title>요청이 검증·처리를 거쳐 저장되는 흐름</title>
+
+  <rect class="box"    x="20"  y="30" width="160" height="52" rx="8"/>
+  <text x="100" y="52" text-anchor="middle">입력</text>
+  <text x="100" y="70" text-anchor="middle" class="label">사용자 요청</text>
+
+  <rect class="box-em" x="270" y="30" width="160" height="52" rx="8"/>
+  <text x="350" y="52" text-anchor="middle">처리</text>
+  <text x="350" y="70" text-anchor="middle" class="label">검증 후 변환</text>
+
+  <rect class="box"    x="520" y="30" width="160" height="52" rx="8"/>
+  <text x="600" y="52" text-anchor="middle">저장</text>
+  <text x="600" y="70" text-anchor="middle" class="label">트랜잭션</text>
+
+  <path class="edge" d="M182,56 H262"/>
+  <text x="222" y="46" text-anchor="middle" class="label">검증 통과</text>
+
+  <path class="edge" d="M432,56 H512"/>
+  <text x="472" y="46" text-anchor="middle" class="label">커밋</text>
+</svg>
+</div>
+<figcaption>그림 1. 가로 흐름 — 화살표에 라벨을 답니다. 이름 없는 화살표는 정보가 거의 없습니다.</figcaption>
+</figure>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>2. 계층 · 위임</h2>
+<p class="when">하나가 여럿을 거느릴 때. 조직도, 오케스트레이션, 모듈 구성.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 230" role="img">
+  <title>메인 세션이 다섯 서브에이전트에 일을 내리는 구조</title>
+
+  <rect class="box-em" x="265" y="14" width="170" height="50" rx="8"/>
+  <text x="350" y="36" text-anchor="middle">메인 세션</text>
+  <text x="350" y="54" text-anchor="middle" class="label">해석 · 계획 · 판단</text>
+
+  <!-- 루트에서 내려와 가로로 분기 -->
+  <path class="edge-dim" style="marker-end:none" d="M350,64 V104"/>
+  <path class="edge-dim" style="marker-end:none" d="M79,104 H621"/>
+  <path class="edge" d="M79,104  V148"/>
+  <path class="edge" d="M214,104 V148"/>
+  <path class="edge" d="M350,104 V148"/>
+  <path class="edge" d="M486,104 V148"/>
+  <path class="edge" d="M621,104 V148"/>
+
+  <rect class="box" x="20"  y="150" width="118" height="56" rx="8"/>
+  <text x="79"  y="172" text-anchor="middle">scout</text>
+  <text x="79"  y="190" text-anchor="middle" class="label">haiku</text>
+
+  <rect class="box" x="155" y="150" width="118" height="56" rx="8"/>
+  <text x="214" y="172" text-anchor="middle">implementer</text>
+  <text x="214" y="190" text-anchor="middle" class="label">sonnet</text>
+
+  <rect class="box" x="291" y="150" width="118" height="56" rx="8"/>
+  <text x="350" y="172" text-anchor="middle">reviewer</text>
+  <text x="350" y="190" text-anchor="middle" class="label">opus</text>
+
+  <rect class="box" x="427" y="150" width="118" height="56" rx="8"/>
+  <text x="486" y="172" text-anchor="middle">auditor</text>
+  <text x="486" y="190" text-anchor="middle" class="label">opus</text>
+
+  <rect class="box" x="562" y="150" width="118" height="56" rx="8"/>
+  <text x="621" y="172" text-anchor="middle">scribe</text>
+  <text x="621" y="190" text-anchor="middle" class="label">haiku</text>
+</svg>
+</div>
+<figcaption>그림 2. 계층 — 분기선은 <code>edge-dim</code>, 실제 위임은 <code>edge</code>로 구분했습니다.</figcaption>
+</figure>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>3. 반복 루프</h2>
+<p class="when">같은 절차를 단위마다 되풀이할 때. 되돌아오는 선을 아래로 빼서 본 흐름을 가리지 않게 합니다.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 165" role="img">
+  <title>계획부터 퀴즈까지 다섯 단계를 작업 단위마다 반복하는 루프</title>
+
+  <rect class="box" x="25"  y="24" width="110" height="46" rx="8"/>
+  <text x="80"  y="52" text-anchor="middle">1 계획</text>
+  <rect class="box" x="160" y="24" width="110" height="46" rx="8"/>
+  <text x="215" y="52" text-anchor="middle">2 계획 리뷰</text>
+  <rect class="box" x="295" y="24" width="110" height="46" rx="8"/>
+  <text x="350" y="52" text-anchor="middle">3 구현</text>
+  <rect class="box" x="430" y="24" width="110" height="46" rx="8"/>
+  <text x="485" y="52" text-anchor="middle">4 구현 리뷰</text>
+  <rect class="box" x="565" y="24" width="110" height="46" rx="8"/>
+  <text x="620" y="52" text-anchor="middle">5 퀴즈</text>
+
+  <path class="edge" d="M137,47 H158"/>
+  <path class="edge" d="M272,47 H293"/>
+  <path class="edge" d="M407,47 H428"/>
+  <path class="edge" d="M542,47 H563"/>
+
+  <!-- 되돌아오는 선 -->
+  <path class="edge" d="M620,72 V108 Q620,124 604,124 H96 Q80,124 80,108 V74"/>
+  <text x="350" y="142" text-anchor="middle" class="label">다음 작업 단위로</text>
+</svg>
+</div>
+<figcaption>그림 3. 반복 루프</figcaption>
+</figure>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>4. 시퀀스</h2>
+<p class="when">주고받는 순서와 방향이 중요할 때. 반환은 점선으로 구분합니다.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 250" role="img">
+  <title>사용자 요청이 메인을 거쳐 서브에이전트에 위임되고 되돌아오는 순서</title>
+
+  <rect class="box"    x="20"  y="10" width="140" height="38" rx="8"/>
+  <text x="90"  y="34" text-anchor="middle">나</text>
+  <rect class="box-em" x="280" y="10" width="140" height="38" rx="8"/>
+  <text x="350" y="34" text-anchor="middle">메인</text>
+  <rect class="box"    x="540" y="10" width="140" height="38" rx="8"/>
+  <text x="610" y="34" text-anchor="middle">서브에이전트</text>
+
+  <line class="lifeline" x1="90"  y1="48" x2="90"  y2="235"/>
+  <line class="lifeline" x1="350" y1="48" x2="350" y2="235"/>
+  <line class="lifeline" x1="610" y1="48" x2="610" y2="235"/>
+
+  <path class="edge" d="M90,85 H344"/>
+  <text x="217" y="77" text-anchor="middle" class="label">요구사항</text>
+
+  <path class="edge" d="M350,130 H604"/>
+  <text x="477" y="122" text-anchor="middle" class="label">자족적 지시 · 범위 명시</text>
+
+  <path class="edge-dim" d="M610,175 H356"/>
+  <text x="483" y="167" text-anchor="middle" class="label">결과 보고</text>
+
+  <path class="edge" d="M350,220 H96"/>
+  <text x="223" y="212" text-anchor="middle" class="label">검증한 것 · 못 한 것</text>
+</svg>
+</div>
+<figcaption>그림 4. 시퀀스 — 실선은 요청, 점선은 반환입니다.</figcaption>
+</figure>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2>5. 대비 (HTML/CSS)</h2>
+<p class="when">두 선택지를 나란히 놓을 때. 이런 모양은 SVG보다 HTML이 고치기 쉽습니다.</p>
+
+<div class="compare">
+  <div>
+    <h3>내리는 게 나을 때</h3>
+    <ul>
+      <li>파일을 여러 개 열어야 하는데 결론만 필요할 때</li>
+      <li>서로 의존하지 않는 작업이 여럿일 때</li>
+      <li>같은 코드를 다른 눈으로 볼 때</li>
+    </ul>
+  </div>
+  <div>
+    <h3>직접 하는 게 나을 때</h3>
+    <ul>
+      <li>파일 하나 읽으면 끝나는 일</li>
+      <li>이미 컨텍스트에 있는 내용</li>
+      <li>무엇을 원하는지 아직 안 정해진 일</li>
+    </ul>
+  </div>
+</div>
+
+<h2>6. 단순 흐름 (HTML/CSS)</h2>
+<p class="when">칸이 서너 개고 좌표를 잡을 이유가 없을 때. 좁은 화면에서 세로로 접힙니다.</p>
+
+<div class="flow">
+  <div class="node"><span class="n-title">해석</span><span class="n-sub">메인이 직접</span></div>
+  <div class="arrow">→</div>
+  <div class="node em"><span class="n-title">위임 판단</span><span class="n-sub">내릴지 직접 할지</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><span class="n-title">검증</span><span class="n-sub">만든 쪽에 안 맡김</span></div>
+</div>
+
+</main>
+</body>
+</html>

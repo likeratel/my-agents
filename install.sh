@@ -52,8 +52,9 @@ link_children() {
 link_children "$ROOT/.claude/skills" "$HOME_CLAUDE/skills" "skills"
 link_children "$ROOT/.claude/agents" "$HOME_CLAUDE/agents" "agents"
 
-# 규칙 트리는 통째로 우리 것이므로 디렉토리 하나로 링크한다
+# 규칙·템플릿 트리는 통째로 우리 것이므로 디렉토리 하나로 링크한다
 link_one "$ROOT/.claude/rules" "$HOME_CLAUDE/rules" "rules/"
+link_one "$ROOT/.claude/templates" "$HOME_CLAUDE/templates" "templates/"
 
 # 최상위 문서
 link_one "$ROOT/.claude/CLAUDE.md" "$HOME_CLAUDE/CLAUDE.md" "CLAUDE.md"

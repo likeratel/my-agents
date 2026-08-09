@@ -17,6 +17,9 @@ my-agents/
 │   ├── rules/                → ~/.claude/rules (폴더 통째 링크)
 │   │   ├── common/           모든 언어 공통 규칙
 │   │   └── typescript/       TS·JS 파일에만 붙는 규칙
+│   ├── templates/            → ~/.claude/templates (폴더 통째 링크)
+│   │   ├── document.html     문서 껍데기 — 테마·타이포·표·코드
+│   │   └── diagram-patterns.html  복사해 쓰는 SVG·CSS 다이어그램
 │   ├── CLAUDE.md             → ~/.claude/CLAUDE.md
 │   └── PROJECT_TEMPLATE.md   → ~/.claude/PROJECT_TEMPLATE.md
 ├── install.sh                ← 심볼릭 링크 설치 (idempotent)
@@ -76,10 +79,33 @@ frontmatter의 `paths`로 TS·JS 파일에만 붙습니다.
 | `common/coding-style.md`    | 불변성, 파일 분할 기준, 에러 처리, 입력 검증                |
 | `common/git-workflow.md`    | 커밋 메시지 포맷, PR 작성 절차                              |
 | `common/security.md`        | 커밋 전 보안 체크리스트, 시크릿 관리                        |
+| `common/documentation.md`   | 문서 산출물 형식 — HTML 자립 파일, 다이어그램 규칙          |
 | `typescript/*.md`           | 위 규칙의 TS·JS 구현 — 스타일·패턴·보안·테스트              |
 
 `PROJECT_TEMPLATE.md`는 프로젝트별 `PROJECT_RULES.md`를 새로 쓸 때 베끼는 템플릿입니다. 글로벌 규칙에 넣기엔
 프로젝트 고유한 내용(배포 명령, 팀 컨벤션, 자주 나는 이슈)이 갈 자리입니다.
+
+## 문서
+
+산출물 문서 — 설계·분석·리포트·인수인계 — 는 **자립적인 단일 HTML 파일**로 만듭니다. 그림과 다이어그램도
+전부 HTML입니다: 인라인 SVG 또는 CSS로 그리고, PNG·스크린샷·외부 작도 서비스는 쓰지 않습니다.
+
+**왜 HTML인가.** 마크다운은 그림을 못 그려서 결국 PNG를 옆에 두게 되는데, 그러면 그림 속 글자는 검색도
+선택도 안 되고 수정하려면 원본 파일을 따로 찾아야 합니다. HTML은 다이어그램·본문·표가 한 파일에 있고,
+글자가 진짜 글자라 검색이 되고, 고칠 때 그 자리에서 고칩니다.
+
+**왜 자립인가.** CDN·웹폰트·외부 스크립트를 걸면 네트워크 없는 곳에서 다르게 보이거나 아예 깨집니다.
+문서는 첨부해서 보내고 몇 년 뒤에 열어도 그대로여야 합니다.
+
+| 템플릿                   | 무엇                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| `document.html`          | 문서 껍데기 — 테마 변수, 타이포, 표, 코드블록, 공통 화살표 정의 |
+| `diagram-patterns.html`  | 흐름·계층·루프·시퀀스·대비 — 좌표와 글자만 바꿔 쓰는 패턴       |
+
+라이트·다크는 `prefers-color-scheme`로 따라가고, 다이어그램은 `currentColor`를 써서 테마를 자동으로 좇습니다.
+
+**예외는 정본 문서입니다.** `README`·`CHANGELOG`처럼 저장소가 이미 마크다운으로 관리하는 문서는 그대로 둡니다.
+호스팅 서비스가 렌더링하는 형식이고 기여자가 기대하는 형식입니다. 이 README가 마크다운인 이유이기도 합니다.
 
 ## 공개 저장소입니다
 
