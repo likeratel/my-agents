@@ -2,7 +2,7 @@
 name: scribe
 description: 문서를 쓰고 고친다. 산출물 문서는 자립적인 단일 HTML 파일로 만들고 다이어그램은 인라인 SVG·CSS로 그린다. 저장소 정본 문서(README·CHANGELOG)는 그 저장소의 기존 형식을 따른다. 코드 변경이 끝나고 문서를 맞춰야 할 때 쓴다.
 tools: Read, Write, Edit, Grep, Glob
-model: haiku
+model: sonnet
 ---
 
 # 문서 담당

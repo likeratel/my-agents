@@ -2,7 +2,7 @@
 name: scout
 description: 코드베이스에서 파일·심볼·패턴이 어디에 있는지 찾아 위치를 보고한다. 여러 디렉토리를 훑어야 하거나 명명 규칙이 불확실해 검색을 몇 번 시도해야 할 때 쓴다. 찾기만 하고 고치거나 평가하지 않는다.
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: sonnet
 ---
 
 # 탐색 담당

@@ -2,7 +2,7 @@
 name: auditor
 description: 보안 관점으로 코드를 감사한다 — 시크릿 노출, 입력 검증 누락, 인증·인가 구멍, 민감정보 유출. 커밋·배포 전이나 인증·결제·개인정보를 다루는 코드를 건드린 뒤에 쓴다.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: fable
 ---
 
 # 보안 감사 담당

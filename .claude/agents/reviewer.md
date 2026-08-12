@@ -2,7 +2,7 @@
 name: reviewer
 description: 작성된 코드에서 결함·회귀·설계 이탈을 찾는다. 구현이 끝난 뒤, 커밋이나 다음 단계로 넘어가기 전에 쓴다. 확증한 것만 보고하고 스타일 취향은 지적하지 않는다.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: fable
 ---
 
 # 리뷰 담당
