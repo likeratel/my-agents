@@ -171,35 +171,35 @@ svg.diagram .lifeline { stroke: var(--line); stroke-width: 1.25; stroke-dasharra
 
 <!-- ══════════════════════════════════════════════════════════ -->
 <h2>3. 반복 루프</h2>
-<p class="when">같은 절차를 단위마다 되풀이할 때. 되돌아오는 선을 아래로 빼서 본 흐름을 가리지 않게 합니다.</p>
+<p class="when">같은 절차를 되풀이할 때. 재시도와 순회처럼 루프가 겹치면 되돌아오는 선의 깊이를 달리해
+아래로 뺍니다 — 본 흐름을 가리지 않습니다.</p>
 
 <figure>
 <div class="diagram-scroll">
-<svg class="diagram" viewBox="0 0 700 165" role="img">
-  <title>계획부터 퀴즈까지 다섯 단계를 작업 단위마다 반복하는 루프</title>
+<svg class="diagram" viewBox="0 0 700 185" role="img">
+  <title>구현과 판정을 통과까지 반복하고 작업 단위를 순회하는 이중 루프</title>
 
-  <rect class="box" x="25"  y="24" width="110" height="46" rx="8"/>
-  <text x="80"  y="52" text-anchor="middle">1 계획</text>
-  <rect class="box" x="160" y="24" width="110" height="46" rx="8"/>
-  <text x="215" y="52" text-anchor="middle">2 계획 리뷰</text>
-  <rect class="box" x="295" y="24" width="110" height="46" rx="8"/>
-  <text x="350" y="52" text-anchor="middle">3 구현</text>
-  <rect class="box" x="430" y="24" width="110" height="46" rx="8"/>
-  <text x="485" y="52" text-anchor="middle">4 구현 리뷰</text>
-  <rect class="box" x="565" y="24" width="110" height="46" rx="8"/>
-  <text x="620" y="52" text-anchor="middle">5 퀴즈</text>
+  <rect class="box" x="40"  y="24" width="160" height="46" rx="8"/>
+  <text x="120" y="52" text-anchor="middle">구현</text>
+  <rect class="box" x="270" y="24" width="160" height="46" rx="8"/>
+  <text x="350" y="52" text-anchor="middle">리뷰 · 판정</text>
+  <rect class="box" x="500" y="24" width="160" height="46" rx="8"/>
+  <text x="580" y="52" text-anchor="middle">진행 보고</text>
 
-  <path class="edge" d="M137,47 H158"/>
-  <path class="edge" d="M272,47 H293"/>
-  <path class="edge" d="M407,47 H428"/>
-  <path class="edge" d="M542,47 H563"/>
+  <path class="edge" d="M202,47 H262"/>
+  <path class="edge" d="M432,47 H492"/>
+  <text x="462" y="39" text-anchor="middle" class="label">통과</text>
 
-  <!-- 되돌아오는 선 -->
-  <path class="edge" d="M620,72 V108 Q620,124 604,124 H96 Q80,124 80,108 V74"/>
-  <text x="350" y="142" text-anchor="middle" class="label">다음 작업 단위로</text>
+  <!-- 안쪽 루프: 판정 불통과 → 재시도 (상한 있음) -->
+  <path class="edge" d="M350,72 V92 Q350,104 338,104 H147 Q135,104 135,92 V74"/>
+  <text x="243" y="120" text-anchor="middle" class="label">불통과 → 수정 · 같은 단위 최대 2회</text>
+
+  <!-- 바깥 루프: 단위 순회 -->
+  <path class="edge" d="M580,72 V128 Q580,140 568,140 H117 Q105,140 105,128 V74"/>
+  <text x="343" y="158" text-anchor="middle" class="label">다음 작업 단위로</text>
 </svg>
 </div>
-<figcaption>그림 3. 반복 루프</figcaption>
+<figcaption>그림 3. 반복 루프 — 안쪽은 상한 있는 재시도, 바깥쪽은 단위 순회입니다.</figcaption>
 </figure>
 
 <!-- ══════════════════════════════════════════════════════════ -->
