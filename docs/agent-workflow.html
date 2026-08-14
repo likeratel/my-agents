@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>my-agents 에이전트 워크플로우</title>
+<style>
+:root {
+  --bg:        #ffffff;
+  --surface:   #f7f8fa;
+  --fg:        #1c1e21;
+  --muted:     #5c6370;
+  --line:      #d8dbe0;
+  --accent:    #0b5fbd;
+  --accent-bg: #eaf2fd;
+  --warn:      #a86400;
+  --warn-bg:   #fff6e5;
+  --measure:   46rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #15171b;
+    --surface:   #1d2025;
+    --fg:        #e3e5e8;
+    --muted:     #9aa1ad;
+    --line:      #333840;
+    --accent:    #6cb0ff;
+    --accent-bg: #16283d;
+    --warn:      #e0a94f;
+    --warn-bg:   #2e2617;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 3rem 1.25rem 6rem;
+  background: var(--bg); color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR",
+               "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: 16px; line-height: 1.7;
+  word-break: keep-all; overflow-wrap: break-word;
+}
+main, header { max-width: var(--measure); margin: 0 auto; }
+header { margin-bottom: 2.5rem; }
+h1 { font-size: 1.9rem; line-height: 1.3; margin: 0 0 .5rem; letter-spacing: -.01em; }
+.subtitle { color: var(--muted); margin: 0; font-size: 1.05rem; }
+.meta { color: var(--muted); font-size: .85rem; margin-top: 1rem; }
+h2 {
+  font-size: 1.35rem; margin: 3.5rem 0 1rem; padding-bottom: .4rem;
+  border-bottom: 1px solid var(--line); letter-spacing: -.01em;
+}
+p { margin: 0 0 1rem; }
+code {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: .1em .35em; font-size: .88em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.note {
+  border-left: 3px solid var(--accent); background: var(--accent-bg);
+  border-radius: 0 6px 6px 0; padding: .85rem 1.1rem; margin: 0 0 1.5rem;
+}
+.note > :last-child { margin-bottom: 0; }
+
+figure { margin: 0 0 1.75rem; }
+figcaption { color: var(--muted); font-size: .85rem; margin-top: .6rem; text-align: center; }
+.diagram-scroll { overflow-x: auto; }
+svg.diagram {
+  display: block; width: 100%; min-width: 40rem; height: auto;
+  color: var(--fg); font-family: inherit;
+}
+svg.diagram text      { fill: currentColor; font-size: 13px; }
+svg.diagram .label    { font-size: 11.5px; fill: var(--muted); }
+svg.diagram .box      { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }
+svg.diagram .box-em   { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 1.5; }
+svg.diagram .edge     { stroke: currentColor; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+svg.diagram .edge-dim { stroke: var(--muted); stroke-width: 1.25; fill: none;
+                        stroke-dasharray: 4 3; marker-end: url(#arrowhead-dim); }
+
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; margin: 0 0 1rem; }
+.flow .node {
+  flex: 1 1 8rem; background: var(--surface); border: 1.5px solid var(--line);
+  border-radius: 8px; padding: .7rem .9rem; font-size: .9rem;
+}
+.flow .node.em { background: var(--accent-bg); border-color: var(--accent); }
+.flow .node .n-title { font-weight: 620; display: block; }
+.flow .node .n-sub { color: var(--muted); font-size: .82rem; }
+.flow .arrow { align-self: center; color: var(--muted); flex: 0 0 auto; }
+@media (max-width: 34rem) {
+  .flow { flex-direction: column; }
+  .flow .arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+    </marker>
+    <marker id="arrowhead-dim" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity=".6"></path>
+    </marker>
+  </defs>
+</svg>
+
+<header>
+  <h1>에이전트 워크플로우</h1>
+  <p class="subtitle">메인 오케스트레이션 · 모델 라우팅 · delivery-loop 자율 루프</p>
+  <p class="meta">my-agents 저장소 기준 · 파란 상자는 사람이 개입하는 지점</p>
+</header>
+
+<main>
+
+<h2>1. 구조 — 누가 누구에게 일을 내리나</h2>
+
+<p>메인 세션이 요구사항 해석·계획·라우팅을 맡고, 손이 가는 일을 다섯 서브에이전트에 내립니다.
+요구사항 해석은 절대 아래로 내리지 않습니다.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 285" role="img">
+  <title>나에서 메인 세션을 거쳐 다섯 서브에이전트로 일이 내려가는 구조</title>
+
+  <rect class="box-em" x="300" y="12" width="100" height="40" rx="8"/>
+  <text x="350" y="37" text-anchor="middle">나</text>
+
+  <path class="edge" d="M350,52 V66"/>
+
+  <rect class="box" x="255" y="68" width="190" height="54" rx="8"/>
+  <text x="350" y="90" text-anchor="middle">메인 세션</text>
+  <text x="350" y="108" text-anchor="middle" class="label">Fable 5 · 해석 · 계획 · 라우팅</text>
+
+  <path class="edge-dim" style="marker-end:none" d="M350,122 V156"/>
+  <path class="edge-dim" style="marker-end:none" d="M79,156 H621"/>
+  <text x="565" y="148" text-anchor="middle" class="label">위임 — 라우팅 한 줄 명시</text>
+  <path class="edge" d="M79,156  V196"/>
+  <path class="edge" d="M214,156 V196"/>
+  <path class="edge" d="M350,156 V196"/>
+  <path class="edge" d="M486,156 V196"/>
+  <path class="edge" d="M621,156 V196"/>
+
+  <rect class="box" x="20" y="198" width="118" height="68" rx="8"/>
+  <text x="79" y="222" text-anchor="middle">scout</text>
+  <text x="79" y="240" text-anchor="middle" class="label">sonnet</text>
+  <text x="79" y="256" text-anchor="middle" class="label">읽기 전용</text>
+
+  <rect class="box" x="155" y="198" width="118" height="68" rx="8"/>
+  <text x="214" y="222" text-anchor="middle">implementer</text>
+  <text x="214" y="240" text-anchor="middle" class="label">sonnet</text>
+  <text x="214" y="256" text-anchor="middle" class="label">읽기 · 쓰기</text>
+
+  <rect class="box" x="291" y="198" width="118" height="68" rx="8"/>
+  <text x="350" y="222" text-anchor="middle">reviewer</text>
+  <text x="350" y="240" text-anchor="middle" class="label">fable</text>
+  <text x="350" y="256" text-anchor="middle" class="label">읽기 전용</text>
+
+  <rect class="box" x="427" y="198" width="118" height="68" rx="8"/>
+  <text x="486" y="222" text-anchor="middle">auditor</text>
+  <text x="486" y="240" text-anchor="middle" class="label">fable</text>
+  <text x="486" y="256" text-anchor="middle" class="label">읽기 전용</text>
+
+  <rect class="box" x="562" y="198" width="118" height="68" rx="8"/>
+  <text x="621" y="222" text-anchor="middle">scribe</text>
+  <text x="621" y="240" text-anchor="middle" class="label">sonnet</text>
+  <text x="621" y="256" text-anchor="middle" class="label">문서만 쓰기</text>
+</svg>
+</div>
+<figcaption>그림 1. 구조 — 만드는 손(implementer·scribe)과 검증하는 눈(reviewer·auditor)이 분리되어 있고,
+검증하는 눈은 쓰기 권한이 없습니다.</figcaption>
+</figure>
+
+<h2>2. 전체 경로 — 여러 단위로 나뉘는 작업</h2>
+
+<p>사람 게이트는 양끝에 모여 있습니다. 앞에서 <strong>무엇을 만들지 서명</strong>하고(B·C·D),
+뒤에서 <strong>그대로 됐는지 검수</strong>합니다(E). 사이는 확정된 설계를 채점 기준 삼아 도는
+자율 루프입니다.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 365" role="img">
+  <title>설계와 확정을 거쳐 자율 루프를 돌고 최종 리뷰로 끝나는 전체 경로</title>
+
+  <rect class="box" x="20" y="20" width="150" height="46" rx="8"/>
+  <text x="95" y="48" text-anchor="middle">A 설계 문서</text>
+  <rect class="box-em" x="195" y="20" width="150" height="46" rx="8"/>
+  <text x="270" y="48" text-anchor="middle">B 설계 리뷰</text>
+  <rect class="box-em" x="370" y="20" width="150" height="46" rx="8"/>
+  <text x="445" y="48" text-anchor="middle">C 퀴즈</text>
+  <rect class="box-em" x="545" y="20" width="150" height="46" rx="8"/>
+  <text x="620" y="48" text-anchor="middle">D 확정</text>
+
+  <path class="edge" d="M172,43 H193"/>
+  <path class="edge" d="M347,43 H368"/>
+  <path class="edge" d="M522,43 H543"/>
+
+  <path class="edge" d="M620,66 V95 H120 V116"/>
+  <text x="370" y="89" text-anchor="middle" class="label">서명 → 루프 시작</text>
+
+  <rect class="box" x="45" y="118" width="150" height="46" rx="8"/>
+  <text x="120" y="146" text-anchor="middle">구현</text>
+  <rect class="box" x="270" y="118" width="160" height="46" rx="8"/>
+  <text x="350" y="146" text-anchor="middle">리뷰 · 판정</text>
+  <rect class="box" x="505" y="118" width="150" height="46" rx="8"/>
+  <text x="580" y="146" text-anchor="middle">진행 보고</text>
+
+  <path class="edge" d="M197,141 H268"/>
+  <path class="edge" d="M432,141 H503"/>
+  <text x="467" y="133" text-anchor="middle" class="label">통과</text>
+
+  <path class="edge" d="M350,164 V194 Q350,206 338,206 H132 Q120,206 120,194 V166"/>
+  <text x="235" y="222" text-anchor="middle" class="label">불통과 → 수정 · 같은 단위 최대 2회</text>
+
+  <path class="edge" d="M580,164 V228 Q580,240 568,240 H117 Q105,240 105,228 V166"/>
+  <text x="343" y="256" text-anchor="middle" class="label">통과 → 다음 작업 단위로</text>
+
+  <path class="edge" d="M640,164 V311 H427"/>
+  <text x="558" y="285" text-anchor="middle" class="label">마지막 단위 통과</text>
+
+  <rect class="box-em" x="275" y="288" width="150" height="46" rx="8"/>
+  <text x="350" y="306" text-anchor="middle">E 최종 리뷰</text>
+  <text x="350" y="324" text-anchor="middle" class="label">퀴즈 2~3문항 → 검수</text>
+</svg>
+</div>
+<figcaption>그림 2. 전체 경로 — 루프 중에는 승인을 기다리지 않지만, 앵커 결함 · 범위 밖 영향 ·
+2회 불통과 · 비가역 도달 시 즉시 탈출해 사람에게 옵니다.</figcaption>
+</figure>
+
+<div class="note">
+  <strong>자율 루프의 3원칙</strong> · ① 앵커(확정된 설계)는 루프 안에서 고치지 않는다
+  ② 같은 단위 2회 상한 ③ 판정은 만든 손이 하지 않는다 — reviewer가 완료 조건을 항목별로
+  대조해 통과/불통과를 명시한다.
+</div>
+
+<h2>3. 경량 경로 — 한 번에 끝나는 작업</h2>
+
+<p>같은 원리를 계획 하나로 접습니다. 앵커가 설계 문서 대신 <strong>승인된 계획</strong>일 뿐입니다.</p>
+
+<div class="flow">
+  <div class="node"><span class="n-title">계획</span><span class="n-sub">범위 · 완료 조건 · 영향 · 롤백. 모호하면 질문</span></div>
+  <div class="arrow">→</div>
+  <div class="node em"><span class="n-title">계획 승인</span><span class="n-sub">사람 서명 · 급소 있으면 퀴즈 1</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><span class="n-title">자율 루프</span><span class="n-sub">구현 → 리뷰·판정, 최대 2회</span></div>
+  <div class="arrow">→</div>
+  <div class="node em"><span class="n-title">최종 확인</span><span class="n-sub">사람 검수 · 퀴즈 0~2</span></div>
+</div>
+<p class="meta" style="text-align:center">예외는 오타 수정 · 한 줄 픽스 · 순수 질문뿐 — 그 외 모든 작업이 두 경로 중 하나를 탑니다.</p>
+
+<h2>4. 퀴즈 — 서명 게이트의 이해 검증</h2>
+
+<p>에이전트가 일하고 사람이 서명만 하면 이해가 침식됩니다(인지부채). 그래서 <strong>서명 직전에
+서명하는 사람의 이해를 퀴즈로 확인</strong>합니다 — C 퀴즈(설계 3~5문항), E 최종 리뷰(구현 결과
+2~3문항), 경량 경로의 승인(최대 1문항)·최종 확인(최대 2문항).</p>
+
+<div class="note">
+  <strong>퀴즈는 시험이 아니라 거울입니다</strong> · 급소만 냅니다 — 순서 제약의 이유, 롤백,
+  영향 범위, 무엇이 안 바뀌었나. 낼 급소가 없으면 내지 않습니다 · 객관식 2~4지선다, 오답 선택지는
+  그럴듯한 오해로 · 한 사이클 총 8문항 이하 · 오답은 블로킹이 아니라 신호 — 해설과 문서 위치를
+  제시하고, 문서가 불명확한 신호면 문서를 고칩니다.
+</div>
+
+<h2>5. 모델 라우팅 — 승격 사다리</h2>
+
+<p>작업의 모양으로 모델을 고릅니다. 결과가 불충분하면 한 단계 위로 <strong>1회만</strong> 승격하고,
+강등은 없습니다. haiku는 쓰지 않습니다.</p>
+
+<figure>
+<div class="diagram-scroll">
+<svg class="diagram" viewBox="0 0 700 135" role="img">
+  <title>sonnet에서 opus를 거쳐 fable로 오르는 승격 사다리</title>
+
+  <rect class="box" x="40" y="40" width="170" height="52" rx="8"/>
+  <text x="125" y="62" text-anchor="middle">sonnet</text>
+  <text x="125" y="80" text-anchor="middle" class="label">바닥 — 기계적 · 표준</text>
+
+  <rect class="box" x="265" y="40" width="170" height="52" rx="8"/>
+  <text x="350" y="62" text-anchor="middle">opus</text>
+  <text x="350" y="80" text-anchor="middle" class="label">미묘 — 트레이드오프 · 동시성</text>
+
+  <rect class="box-em" x="490" y="40" width="170" height="52" rx="8"/>
+  <text x="575" y="62" text-anchor="middle">fable</text>
+  <text x="575" y="80" text-anchor="middle" class="label">마지막 게이트 — 리뷰 · 감사</text>
+
+  <path class="edge" d="M212,66 H263"/>
+  <text x="237" y="116" text-anchor="middle" class="label">불충분 → 승격 (1회)</text>
+  <path class="edge" d="M437,66 H488"/>
+  <text x="462" y="116" text-anchor="middle" class="label">불충분 → 승격 (1회)</text>
+</svg>
+</div>
+<figcaption>그림 3. 승격 사다리 — 애매하면 읽기 작업은 sonnet에 두고, 쓰기·판단 작업은 위로 기웁니다.
+reviewer·auditor는 fable 고정입니다.</figcaption>
+</figure>
+
+</main>
+</body>
+</html>

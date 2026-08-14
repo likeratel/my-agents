@@ -22,6 +22,8 @@ my-agents/
 │   │   └── diagram-patterns.html  복사해 쓰는 SVG·CSS 다이어그램
 │   ├── CLAUDE.md             → ~/.claude/CLAUDE.md
 │   └── PROJECT_TEMPLATE.md   → ~/.claude/PROJECT_TEMPLATE.md
+├── docs/
+│   └── agent-workflow.html   전체 워크플로우 그림 (구조·경로·라우팅)
 ├── install.sh                ← 심볼릭 링크 설치 (idempotent)
 └── README.md
 ```
@@ -45,6 +47,7 @@ cd ~/development/my-agents && ./install.sh
 ## 에이전트
 
 메인 세션이 요구사항 해석·계획·판단을 맡고, 손이 많이 가는 일을 서브에이전트에 내리는 구조입니다.
+전체 그림은 [docs/agent-workflow.html](docs/agent-workflow.html) — 받아서 브라우저로 열면 됩니다.
 **요구사항 해석은 아래로 내리지 않습니다** — 거기서 틀리면 그 아래 작업이 전부 잘못된 전제 위에서 진행되는데,
 서브에이전트는 전제가 틀렸다는 걸 알 방법이 없습니다.
 
