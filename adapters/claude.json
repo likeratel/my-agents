@@ -1,0 +1,30 @@
+{
+  "global_instructions": "Claude-specific guidance: use the declared agent role and its listed tools. Keep the main session responsible for requirements and final decisions.",
+  "agent_instructions": "Use only the tools listed in this agent's frontmatter. Return concrete evidence for completed work.",
+  "roles": {
+    "auditor": {
+      "model": "fable",
+      "tools": ["Read", "Grep", "Glob", "Bash"]
+    },
+    "implementer": {
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+    },
+    "implementer_deep": {
+      "model": "opus",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+    },
+    "reviewer": {
+      "model": "fable",
+      "tools": ["Read", "Grep", "Glob", "Bash"]
+    },
+    "scout": {
+      "model": "sonnet",
+      "tools": ["Read", "Grep", "Glob", "Bash"]
+    },
+    "scribe": {
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Grep", "Glob"]
+    }
+  }
+}

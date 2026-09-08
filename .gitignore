@@ -5,3 +5,7 @@
 # macOS
 .DS_Store
 .gstack/
+
+# 공통 원본에서 생성하는 런타임 설정
+generated/
+__pycache__/

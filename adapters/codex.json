@@ -1,0 +1,36 @@
+{
+  "global_instructions": "Codex-specific guidance: select the configured role when delegation is useful; its configuration controls the model, reasoning effort, and sandbox mode. When role-type selection is unavailable, state the intended role, model, reasoning effort, scope, completion condition, and evidence in a self-contained delegation instruction. Use implementer_deep for difficult implementation instead of overriding implementer's model.",
+  "agent_instructions": "Use the configured sandbox mode and report evidence for every conclusion or change.",
+  "roles": {
+    "auditor": {
+      "model": "gpt-6-astra",
+      "model_reasoning_effort": "high",
+      "sandbox_mode": "read-only"
+    },
+    "implementer": {
+      "model": "gpt-5.6-terra",
+      "model_reasoning_effort": "high",
+      "sandbox_mode": "workspace-write"
+    },
+    "implementer_deep": {
+      "model": "gpt-5.6-sol",
+      "model_reasoning_effort": "high",
+      "sandbox_mode": "workspace-write"
+    },
+    "reviewer": {
+      "model": "gpt-6-astra",
+      "model_reasoning_effort": "high",
+      "sandbox_mode": "read-only"
+    },
+    "scout": {
+      "model": "gpt-5.6-terra",
+      "model_reasoning_effort": "medium",
+      "sandbox_mode": "read-only"
+    },
+    "scribe": {
+      "model": "gpt-5.6-terra",
+      "model_reasoning_effort": "medium",
+      "sandbox_mode": "workspace-write"
+    }
+  }
+}
