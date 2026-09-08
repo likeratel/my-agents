@@ -5,6 +5,9 @@
 
 ## 구조
 
+Codex는 `.codex/AGENTS.md` → `~/.codex/AGENTS.md`, `.codex/agents/` → `~/.codex/agents/` (항목별 링크), `.agents/skills/`의 각 스킬 →
+`~/.agents/skills/`로 연결합니다. Claude 설정은 `.claude/`에서 별도로 유지합니다.
+
 저장소 안의 폴더명은 **대상 위치와 같습니다.** `.claude/`의 내용이 `~/.claude/`로 갑니다.
 
 ```
@@ -28,8 +31,7 @@ my-agents/
 └── README.md
 ```
 
-에이전트가 늘어나면 `.codex/` · `.cursor/` 처럼 최상위에 그 에이전트의 폴더를 추가하고 `install.sh`에 링크 규칙을
-더합니다.
+에이전트가 늘어나면 대상 경로에 맞는 폴더를 추가하고 `install.sh`에 링크 규칙을 더합니다.
 
 **링크 방식이 두 가지인 이유**: `skills/`는 다른 스킬 모음과 한 디렉토리를 공유하므로 항목별로 링크합니다. `rules/`는
 트리 전체가 우리 것이라 폴더 하나로 링크합니다.
@@ -43,6 +45,47 @@ cd ~/development/my-agents && ./install.sh
 
 **기존에 같은 이름의 실제 파일·폴더가 있으면 건드리지 않고 건너뜁니다** — 다른 설정 모음을 덮어쓰지 않기 위함입니다.
 건너뛴 항목은 실행 결과에 이름이 찍히니 직접 확인해서 옮기거나 지우면 됩니다.
+
+기본은 두 에이전트 모두 설치합니다. `./install.sh --codex` 또는 `./install.sh --claude`로 대상만 선택할 수
+있습니다. `CODEX_HOME`이 별도로 설정되어 있으면 그 위치에도 글로벌 지침과 에이전트를 연결합니다.
+설치 확인용 별도 경로는 `MY_AGENTS_HOME=/tmp/my-agents-check ./install.sh --codex`처럼 지정합니다.
+이 경우 실제 홈과 `CODEX_HOME`은 변경하지 않습니다.
+설치 후 새 Codex 세션에서 사용합니다. 적용 대상에 `AGENTS.override.md`가 있으면 글로벌 `AGENTS.md`보다
+우선하므로 적용 여부를 확인하세요.
+
+## Codex 워크플로우
+
+- **일상 작업:** 짧은 완료 조건 → 구현 → 변경에 맞는 검증 → 결과 보고. 별도 계획 승인이나 최종 서명을 요구하지 않습니다.
+- **큰 작업:** 의존하는 단계, 중요한 설계 결정, 데이터·공개 인터페이스 마이그레이션이 있으면 `delivery-loop`를 적용합니다. `$delivery-loop`로 직접 요청할 수도 있습니다.
+- **리뷰:** 필요하고 허용되면 독립 리뷰를 사용합니다. 사용할 수 없으면 직접 리뷰하고 그 한계를 보고합니다.
+- **질문:** 중요한 미결정 사항만 묻고 기존 승인은 재사용합니다. 완료 조건을 구현에 맞춰 낮추지 않습니다.
+- **선택 절차:** 병렬 에이전트, 보안 감사, 퀴즈, HTML 문서는 필요에 따라 사용합니다.
+
+### Codex 모델 라우팅
+
+기존의 탐색·구현·리뷰 분담을 다음과 같이 구성합니다. Claude 모델과 성능이 동일하다는 뜻은 아니며,
+현재 환경의 모델 목록을 기준으로 정한 초기 운영안입니다. 메인 모델은 세션에서 선택한 설정을 유지합니다.
+
+| 역할 | 모델 | 추론 강도 | 기본 권한 |
+| --- | --- | --- | --- |
+| scout | gpt-5.6-terra | medium | 읽기 |
+| implementer | gpt-5.6-terra | high | 읽기·쓰기 |
+| implementer_deep | gpt-5.6-sol | high | 읽기·쓰기 |
+| reviewer | gpt-6-astra | high | 읽기 |
+| auditor | gpt-6-astra | high | 읽기 |
+| scribe | gpt-5.6-terra | medium | 읽기·쓰기 |
+
+일반 구현이 어렵거나 결과가 부족하면 `implementer_deep`으로 한 번 승격하고, 이후에는 메인이 판단합니다.
+리뷰·감사는 Astra를 유지합니다. 작은 작업은 메인이 직접 처리하고 모든 역할을 매번 호출하지 않습니다.
+`implementer_deep`은 별도 구현 역할이므로 고정된 모델을 호출 인자로 덮어쓸 필요가 없습니다.
+역할 파일을 지원하지 않는 실행 환경에서는 글로벌 지침의 모델·추론 강도·역할을 명시하는 경로를 사용합니다.
+모델을 사용할 수 없으면 조용히 대체하지 않고 검증 한계를 보고합니다.
+
+정의는 `.codex/agents/*.toml`, 선택 기준은 `.codex/AGENTS.md`에 있습니다. 기본 권한은 실행 중 설정에
+영향받으므로 강제 격리 보장은 아닙니다. 형식과 우선순위는 [OpenAI 공식 서브에이전트 문서](https://learn.chatgpt.com/docs/agent-configuration/subagents)를 따릅니다.
+
+아래 에이전트·스킬·규칙·문서 설명은 기존
+**Claude Code 구성**이며, Codex에서는 `.codex/AGENTS.md`와 `.agents/skills/delivery-loop/SKILL.md`를 따릅니다.
 
 ## 에이전트
 

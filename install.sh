@@ -5,7 +5,18 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOME_CLAUDE="${HOME}/.claude"
+INSTALL_HOME="${MY_AGENTS_HOME:-$HOME}"
+HOME_CLAUDE="$INSTALL_HOME/.claude"
+TARGET="${1:---all}"
+
+if [ "$#" -gt 1 ]; then
+  echo "사용법: $0 [--all|--claude|--codex]" >&2
+  exit 1
+fi
+case "$TARGET" in
+  --all|--claude|--codex) ;;
+  *) echo "사용법: $0 [--all|--claude|--codex]" >&2; exit 1 ;;
+esac
 
 linked=0 already=0 skipped=0
 
@@ -49,16 +60,28 @@ link_children() {
 }
 
 # 스킬·에이전트는 남의 것과 한 디렉토리를 공유하므로 항목별로 링크한다
-link_children "$ROOT/.claude/skills" "$HOME_CLAUDE/skills" "skills"
-link_children "$ROOT/.claude/agents" "$HOME_CLAUDE/agents" "agents"
+if [ "$TARGET" != "--codex" ]; then
+  link_children "$ROOT/.claude/skills" "$HOME_CLAUDE/skills" "skills"
+  link_children "$ROOT/.claude/agents" "$HOME_CLAUDE/agents" "agents"
 
 # 규칙·템플릿 트리는 통째로 우리 것이므로 디렉토리 하나로 링크한다
-link_one "$ROOT/.claude/rules" "$HOME_CLAUDE/rules" "rules/"
-link_one "$ROOT/.claude/templates" "$HOME_CLAUDE/templates" "templates/"
+  link_one "$ROOT/.claude/rules" "$HOME_CLAUDE/rules" "rules/"
+  link_one "$ROOT/.claude/templates" "$HOME_CLAUDE/templates" "templates/"
 
 # 최상위 문서
-link_one "$ROOT/.claude/CLAUDE.md" "$HOME_CLAUDE/CLAUDE.md" "CLAUDE.md"
-link_one "$ROOT/.claude/PROJECT_TEMPLATE.md" "$HOME_CLAUDE/PROJECT_TEMPLATE.md" "PROJECT_TEMPLATE.md"
+  link_one "$ROOT/.claude/CLAUDE.md" "$HOME_CLAUDE/CLAUDE.md" "CLAUDE.md"
+  link_one "$ROOT/.claude/PROJECT_TEMPLATE.md" "$HOME_CLAUDE/PROJECT_TEMPLATE.md" "PROJECT_TEMPLATE.md"
+fi
+
+if [ "$TARGET" != "--claude" ]; then
+  link_one "$ROOT/.codex/AGENTS.md" "$INSTALL_HOME/.codex/AGENTS.md" "codex/AGENTS.md"
+  link_children "$ROOT/.codex/agents" "$INSTALL_HOME/.codex/agents" "codex/agents"
+  link_children "$ROOT/.agents/skills" "$INSTALL_HOME/.agents/skills" "codex/skills"
+  if [ -z "${MY_AGENTS_HOME:-}" ] && [ -n "${CODEX_HOME:-}" ] && [ "$CODEX_HOME" != "$INSTALL_HOME/.codex" ]; then
+    link_one "$ROOT/.codex/AGENTS.md" "$CODEX_HOME/AGENTS.md" "CODEX_HOME/AGENTS.md"
+    link_children "$ROOT/.codex/agents" "$CODEX_HOME/agents" "CODEX_HOME/agents"
+  fi
+fi
 
 echo
 echo "완료 — 연결 $linked · 이미 연결됨 $already · 건너뜀 $skipped"
