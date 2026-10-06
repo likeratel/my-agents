@@ -75,9 +75,40 @@ class GeneratorTests(unittest.TestCase):
                     (self.root / "generated/codex/agents" / (role + ".toml")).read_text(encoding="utf-8")
                 )
                 self.assertEqual(data["model"], config["model"])
-                self.assertEqual(data["model_reasoning_effort"], config["model_reasoning_effort"])
+                self.assertNotIn("model_reasoning_effort", data)
                 self.assertEqual(data["sandbox_mode"], config["sandbox_mode"])
                 self.assertIn("~/.agents/my-agents/rules/common/*.md", data["developer_instructions"])
+
+    def test_routing_uses_adapter_fallback_order_without_fixed_effort(self):
+        adapter_path = self.root / "adapters/codex.json"
+        original = json.loads(adapter_path.read_text(encoding="utf-8"))
+        adapter_path.write_text(json.dumps({
+            **original,
+            "model_fallback_order": [*original["model_fallback_order"], "test-last-model"],
+        }), encoding="utf-8")
+        result = self.generate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for tool, filename in (("codex", "AGENTS.md"), ("claude", "CLAUDE.md")):
+            adapter = json.loads((self.root / "adapters" / (tool + ".json")).read_text())
+            output = (self.root / "generated" / tool / filename).read_text()
+            expected_order = " → ".join("`%s`" % model for model in adapter["model_fallback_order"])
+            self.assertIn("Model fallback order: " + expected_order, output)
+            self.assertNotIn("Reasoning effort |", output)
+        for agent in (self.root / "generated/codex/agents").glob("*.toml"):
+            self.assertNotIn("model_reasoning_effort =", agent.read_text())
+
+    def test_invalid_fallback_orders_fail_before_writing(self):
+        for tool in ("codex", "claude"):
+            path = self.root / "adapters" / (tool + ".json")
+            original = json.loads(path.read_text())
+            for order in (None, [], "model", [""], [123], [["model"]], ["x", "x"], ["unknown"]):
+                with self.subTest(tool=tool, order=order):
+                    path.write_text(json.dumps({**original, "model_fallback_order": order}))
+                    result = self.generate()
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertIn("model_fallback_order", result.stderr)
+                    self.assertFalse((self.root / "generated").exists())
+            path.write_text(json.dumps(original))
 
     def test_claude_description_is_yaml_quoted(self):
         spec = importlib.util.spec_from_file_location("my_agents_generate", SCRIPT)

@@ -1,4 +1,6 @@
 import os
+import hashlib
+import json
 from pathlib import Path
 import subprocess
 import shutil
@@ -67,6 +69,55 @@ class InstallationTests(unittest.TestCase):
         self.assertEqual(self.install('--codex').returncode, 0)
         self.assertFalse((self.home / '.claude').exists())
 
+    def test_codex_roles_are_regular_files_readable_without_following_links(self):
+        self.assertEqual(self.install('--codex').returncode, 0)
+        for path in (self.home / '.codex/agents').glob('*.toml'):
+            self.assertFalse(path.is_symlink())
+            descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+            os.close(descriptor)
+        self.assertEqual(self.install('--codex').returncode, 0)
+
+    def test_owned_codex_links_migrate_and_foreign_links_stay(self):
+        directory = self.home / '.codex/agents'
+        directory.mkdir(parents=True)
+        scout = directory / 'scout.toml'
+        scout.symlink_to(ROOT / '.codex/agents/scout.toml')
+        foreign = Path(self.temp.name) / 'foreign-role.toml'
+        foreign.write_text('keep')
+        reviewer = directory / 'reviewer.toml'
+        reviewer.symlink_to(foreign)
+        self.assertEqual(self.install('--codex').returncode, 1)
+        self.assertFalse(scout.is_symlink())
+        self.assertEqual(scout.read_bytes(), (ROOT / 'generated/codex/agents/scout.toml').read_bytes())
+        self.assertTrue(reviewer.is_symlink())
+        self.assertEqual(foreign.read_text(), 'keep')
+
+    def test_codex_managed_update_and_user_edit_protection(self):
+        self.assertEqual(self.install('--codex').returncode, 0)
+        directory = self.home / '.codex/agents'
+        scout = directory / 'scout.toml'
+        manifest = directory / '.my-agents-installed.json'
+        old_content = b'# previous managed version\n'
+        scout.write_bytes(old_content)
+        state = json.loads(manifest.read_text())
+        state['scout.toml'] = hashlib.sha256(old_content).hexdigest()
+        manifest.write_text(json.dumps(state))
+        self.assertEqual(self.install('--codex').returncode, 0)
+        self.assertEqual(scout.read_bytes(), (ROOT / 'generated/codex/agents/scout.toml').read_bytes())
+        scout.write_text('user edit')
+        self.assertEqual(self.install('--codex').returncode, 1)
+        self.assertEqual(scout.read_text(), 'user edit')
+
+    def test_codex_manifest_link_is_preserved(self):
+        directory = self.home / '.codex/agents'
+        directory.mkdir(parents=True)
+        foreign = Path(self.temp.name) / 'foreign-manifest'
+        foreign.write_text('{}')
+        (directory / '.my-agents-installed.json').symlink_to(foreign)
+        self.assertEqual(self.install('--codex').returncode, 1)
+        self.assertEqual(foreign.read_text(), '{}')
+        self.assertEqual(list(directory.glob('*.toml')), [])
+
     def test_foreign_parent_link_not_written(self):
         foreign = Path(self.temp.name) / 'foreign_dir'
         foreign.mkdir()
@@ -83,6 +134,7 @@ class InstallationTests(unittest.TestCase):
         self.assertEqual((self.custom / 'AGENTS.md').resolve(),
                          (self.home / '.codex/AGENTS.md').resolve())
         self.assertTrue((self.custom / 'agents/scout.toml').is_file())
+        self.assertFalse((self.custom / 'agents/scout.toml').is_symlink())
 
     def test_custom_home_ancestor_link_is_preserved(self):
         foreign = Path(self.temp.name) / 'foreign'

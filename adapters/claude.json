@@ -26,5 +26,11 @@
       "model": "sonnet",
       "tools": ["Read", "Write", "Edit", "Grep", "Glob"]
     }
-  }
+  },
+  "model_fallback_order": [
+    "fable",
+    "opus",
+    "sonnet",
+    "haiku"
+  ]
 }

@@ -110,23 +110,36 @@ def role_guidance(tool: str, adapter_instructions: str, role_body: str) -> str:
     )
 
 
-def routing_table(adapter: Mapping[str, object], include_effort: bool) -> str:
+def model_fallback_order(adapter: Mapping[str, object]) -> str:
+    order = adapter.get("model_fallback_order")
+    if (
+        not isinstance(order, list)
+        or not order
+        or not all(isinstance(model, str) and model.strip() for model in order)
+        or len(set(order)) != len(order)
+    ):
+        raise ValueError("model_fallback_order must be a non-empty list of unique model names")
+    roles = adapter.get("roles")
+    if not isinstance(roles, dict):
+        raise ValueError("adapter roles must be an object")
+    for name, config in roles.items():
+        if not isinstance(config, dict) or config.get("model") not in order:
+            raise ValueError("role %s model must appear in model_fallback_order" % name)
+    return "Model fallback order: " + " → ".join("`%s`" % model for model in order)
+
+
+def routing_table(adapter: Mapping[str, object]) -> str:
     roles = adapter["roles"]
     if not isinstance(roles, dict):
         raise ValueError("adapter roles must be an object")
     header = "| Role | Model |"
     divider = "| --- | --- |"
-    if include_effort:
-        header += " Reasoning effort |"
-        divider += " --- |"
     rows = [header, divider]
     for name in sorted(roles):
         config = roles[name]
         if not isinstance(config, dict):
             raise ValueError("role config for %s must be an object" % name)
         row = "| `%s` | `%s` |" % (name, config["model"])
-        if include_effort:
-            row += " `%s` |" % config["model_reasoning_effort"]
         rows.append(row)
     return "\n".join(rows)
 
@@ -137,7 +150,6 @@ def global_document(
     rules: Mapping[str, str],
     adapter: Mapping[str, object],
 ) -> str:
-    effort = tool == "codex"
     return (
         GENERATED_MARKDOWN_HEADER
         +
@@ -147,14 +159,15 @@ def global_document(
         "## Common rules\n\n%s\n\n"
         "## TypeScript and JavaScript\n\n"
         "For TypeScript or JavaScript tasks, read every applicable file in `%s` before changing code.\n\n"
-        "## Agent routing\n\n%s\n"
+        "## Agent routing\n\n%s\n\n%s\n"
         % (
             instructions.rstrip(),
             tool.title(),
             adapter["global_instructions"],
             common_rules_body(rules),
             TYPESCRIPT_RULES_PATH,
-            routing_table(adapter, include_effort=effort),
+            routing_table(adapter),
+            model_fallback_order(adapter),
         )
     )
 
@@ -178,7 +191,7 @@ def claude_agent(
 
 
 def codex_agent(name: str, config: Mapping[str, object], role: Role, adapter_instructions: str) -> str:
-    required = ("model", "model_reasoning_effort", "sandbox_mode")
+    required = ("model", "sandbox_mode")
     missing = [key for key in required if key not in config]
     if missing:
         raise ValueError("Codex role %s missing %s" % (name, ", ".join(missing)))
@@ -191,14 +204,12 @@ def codex_agent(name: str, config: Mapping[str, object], role: Role, adapter_ins
         "name = %s\n"
         "description = %s\n"
         "model = %s\n"
-        "model_reasoning_effort = %s\n"
         "sandbox_mode = %s\n"
         "developer_instructions = %s\n"
         % (
             json.dumps(str(name), ensure_ascii=False),
             json.dumps(role.description, ensure_ascii=False),
             json.dumps(str(config["model"]), ensure_ascii=False),
-            json.dumps(str(config["model_reasoning_effort"]), ensure_ascii=False),
             json.dumps(str(config["sandbox_mode"]), ensure_ascii=False),
             json.dumps(guidance, ensure_ascii=False),
         )
