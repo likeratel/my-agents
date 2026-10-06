@@ -37,6 +37,13 @@ install.sh                생성과 설치 진입점
 - Codex: `gpt-6-astra → gpt-5.6-sol → gpt-5.6-terra → gpt-5.6-luna`
 - Claude: `fable → opus → sonnet → haiku`
 
+Claude 어댑터의 모델명은 Claude Code 별칭이며 버전을 고정하지 않습니다. Claude Code가 별칭을 계열별 최신 모델로
+해석하므로 새 세대가 나와도 설정 변경 없이 따라갑니다. 2026-10-06 기준 Claude Code 2.1.291에서 `fable`은
+Claude Fable 5.1, `opus`는 Claude Opus 5.5, `sonnet`은 Claude Sonnet 5.5, `haiku`는 Claude Haiku 4.5로 해석됩니다.
+역할 frontmatter에 전체 모델 ID를 쓰면 Agent 도구의 별칭 기반 model 오버라이드와 어긋날 수 있어 별칭을 유지합니다.
+특정 버전에 고정해야 하면 어댑터를 바꾸지 말고 `ANTHROPIC_DEFAULT_OPUS_MODEL` 등 `ANTHROPIC_DEFAULT_<ALIAS>_MODEL`
+환경 변수로 별칭의 대상을 지정합니다.
+
 reviewer·auditor에도 적용하며 실패 이유와 이전·대체 모델을 알리고 역할·권한·독립성·완료 조건을 유지합니다.
 같은 실행 요청에서 후보별 한 번만 시도하고 같은 유형의 실패일 때만 다음 후보로 진행합니다. 코드·테스트 실패,
 일반 네트워크 오류, 원인이 불명확한 오류나 비용 절약만을 이유로 하향하지 않습니다. 순서에 없는 모델이나

@@ -7,7 +7,7 @@
       "tools": ["Read", "Grep", "Glob", "Bash"]
     },
     "implementer": {
-      "model": "sonnet",
+      "model": "opus",
       "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
     },
     "implementer_deep": {
